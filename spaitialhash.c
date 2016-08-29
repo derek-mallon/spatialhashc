@@ -1,5 +1,6 @@
 #include <list.h>
 #include <math.h>
+#include <stdio.h>
 #define FOR(i,length) for(;i<length;i++)
 #define ARRAY(type,number) malloc(sizeof(type)*number)
 const float CELL_DIMENSION = 1;
@@ -22,16 +23,14 @@ typedef struct rect{
 
 static size_t id_counter = 0;
 
-rect create_rect(vec2 center,vec2 half_dim){
-    rect output = {center,half_dim};
+rect create_rect(float x,float y,float width,float height){
+    rect output = {create_vec2(x,y),create_vec2(width/2,height/2)};
     return output;
 }
 
 bool aabb(rect rect1,rect rect2){
     return (fabsf(rect1.center.x-rect2.center.x) < (rect1.half_dim.x + rect2.half_dim.y) && fabsf(rect1.center.y-rect2.center.y) < (rect1.half_dim.y + rect2.half_dim.y));
 }
-
-
 
 typedef struct hash_point{
     size_t x,y;
@@ -44,24 +43,27 @@ typedef struct bucket{
     rect box;
 }bucket;
 
-bucket create_bucket(rect box){
-    bucket output = {LIST_CREATE(size_t,BUCKET_INIT_SIZE),box};
+bucket create_bucket(){
+    bucket output = {LIST_CREATE(size_t,BUCKET_INIT_SIZE)};
     return output;
 }
 
 void destroy_bucket(bucket* bucket){
     LIST_DESTROY(size_t,&bucket->rect_indexes);
 }
+
 typedef struct location{
     hash_point pos;
     size_t index_in_bucket;
 }location;
+
 LIST_DEC(location)
 LIST_DEF(location)
 typedef struct rect_handler{
     rect rect;
     LIST(location) refrences;
 }rect_handler;
+
 LIST_DEC(rect_handler)
 LIST_DEF(rect_handler)
 typedef struct spatialhash{
@@ -82,14 +84,14 @@ spatialhash create_spatialhash(float map_width,float map_height,float bucket_dim
     FOR(y,output.grid_height){
         output.buckets[y]  = ARRAY(bucket,output.grid_width);
         FOR(x,output.grid_width){
-            output.buckets[y][x] = create_bucket(create_rect(create_vec2(x,y),create_vec2(bucket_dim/2,bucket_dim/2)));
+            output.buckets[y][x] = create_bucket();
         }
     }
     output.unique_rects = LIST_CREATE(rect_handler,1000);
     return output;
 }
 
-void delete_spatialhash(spatialhash* spatialhash){
+void destroy_spatialhash(spatialhash* spatialhash){
     int y=0,x=0;
     FOR(y,spatialhash->grid_height){
         FOR(x,spatialhash->grid_width){
@@ -128,10 +130,14 @@ size_t add_rect(spatialhash* spatialhash,rect rect){
     int max_x = top_right.x;
     int max_y = top_right.y;
     rect_handler handler;
+    handler.refrences = LIST_CREATE(location,10);
     size_t index = LIST_ADD(rect_handler,&spatialhash->unique_rects,handler);
     FOR(y,max_y){
         FOR(x,max_x){
             size_t index_in_bucket = LIST_ADD(size_t,&spatialhash->buckets[y][x].rect_indexes,index);
+            if(spatialhash->buckets[y][x].rect_indexes.item_size){
+                printf("%d,%d",y,x) ;
+            }
             hash_point point = {x,y};
             location loc = {point,index_in_bucket};
             LIST_ADD(location,&handler.refrences,loc);
@@ -173,6 +179,7 @@ typedef struct collision{
     size_t first;
     size_t second;
 }collision;
+
 LIST_DEC(collision)
 LIST_DEF(collision)
 LIST(collision) get_collisions(spatialhash* spatialhash){
@@ -182,6 +189,9 @@ LIST(collision) get_collisions(spatialhash* spatialhash){
         FOR(x,spatialhash->grid_width){
             bucket* test = &spatialhash->buckets[y][x];
             int i=0,j=0;
+            if(x==495){
+                printf("test");
+            }
             FOR(i,test->rect_indexes.item_size){
                 FOR(j,test->rect_indexes.item_size){
                     if(i != j){
@@ -203,6 +213,16 @@ LIST(collision) get_collisions(spatialhash* spatialhash){
 
 int main(){
     spatialhash hash = create_spatialhash(1000,1000,1);
+    rect rect1 = create_rect(0,0,10,10);
+    rect rect2 = create_rect(1,1,10,10);
+    size_t index1 = add_rect(&hash,rect1);
+    size_t index2 = add_rect(&hash,rect2);
+    LIST(collision) collisions = get_collisions(&hash);
+    int i=0;
+    FOR(i,collisions.item_size){
+        printf("%lu,%lu",collisions.items[i].data.first,collisions.items[i].data.second);
+    }
+    destroy_spatialhash(&hash);
 
 }
 
