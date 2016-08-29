@@ -98,6 +98,11 @@ void delete_spatialhash(spatialhash* spatialhash){
         free(spatialhash->buckets[y]);
     }
     free(spatialhash->buckets);
+    int i=0;
+    FOR(i,spatialhash->unique_rects.item_size){
+        LIST_DESTROY(location,&spatialhash->unique_rects.items[i].data.refrences);
+    }
+    LIST_DESTROY(rect_handler,&spatialhash->unique_rects);
 }
 
 hash_point hash(spatialhash* spatialhash,vec2 pos){
@@ -162,6 +167,43 @@ bool update_rect(spatialhash* spatialhash,size_t index,rect rect){
         return true;
     }
     return false;
+}
+
+typedef struct collision{
+    size_t first;
+    size_t second;
+}collision;
+LIST_DEC(collision)
+LIST_DEF(collision)
+LIST(collision) get_collisions(spatialhash* spatialhash){
+    int y=0,x=0;
+    LIST(collision) output = LIST_CREATE(collision,10);
+    FOR(y,spatialhash->grid_height){
+        FOR(x,spatialhash->grid_width){
+            bucket* test = &spatialhash->buckets[y][x];
+            int i=0,j=0;
+            FOR(i,test->rect_indexes.item_size){
+                FOR(j,test->rect_indexes.item_size){
+                    if(i != j){
+                        rect_handler* first_rect = LIST_GET(rect_handler,&spatialhash->unique_rects,test->rect_indexes.items[i].data);
+                        rect_handler* second_rect = LIST_GET(rect_handler,&spatialhash->unique_rects,test->rect_indexes.items[j].data);
+                        if(first_rect && second_rect && aabb(first_rect->rect,second_rect->rect)){
+                            collision new_collision = {test->rect_indexes.items[i].data,test->rect_indexes.items[j].data};
+                            LIST_ADD(collision,&output,new_collision);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return output;
+}
+
+
+
+int main(){
+    spatialhash hash = create_spatialhash(1000,1000,1);
+
 }
 
 
