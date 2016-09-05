@@ -1,18 +1,11 @@
 #ifndef SPAITIALHASH_H
 #define SPAITIALHASH_H
+#include <stdbool.h>
 #include <list.h>
+#include <geometry.h>
 
 LIST_DEC(size_t)
 
-typedef struct vec2{
-    float x;
-    float y;
-}vec2;
-
-typedef struct rect{
-    vec2 center;
-    vec2 half_dim;
-}rect;
 
 typedef struct hash_point{
     size_t x,y;
@@ -52,8 +45,6 @@ typedef struct collision{
 
 LIST_DEC(collision)
 
-vec2 create_vec2(float x,float y);
-rect create_rect(float x,float y,float width,float height);
 bool aabb(rect rect1,rect rect2);
 bool test_point(vec2 point,rect rect);
 spatialhash create_spatialhash(float map_width,float map_height,float bucket_dim);
