@@ -51,8 +51,7 @@ spatialhash create_spatialhash(float map_width,float map_height,float bucket_dim
 void destroy_spatialhash(spatialhash* spatialhash);
 size_t add_rect(spatialhash* spatialhash,rect rect);
 bool update_rect(spatialhash* spatialhash,size_t index,rect rect);
-LIST(collision) get_collisions(spatialhash* spatialhash);
-LIST(size_t) search_collisions(spatialhash* spatialhash,rect rect);
-LIST(size_t) search_point(spatialhash* spatialhash,vec2 pos);
+void get_collisions(spatialhash* spatialhash,LIST(collision)* output);
+void search_point(spatialhash* spatialhash,vec2 pos,LIST(size_t)* output);
 bool delete_rect(spatialhash* spatialhash,size_t index);
 #endif

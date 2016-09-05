@@ -132,8 +132,7 @@ bool update_rect(spatialhash* spatialhash,size_t index,rect rect){
 }
 
 
-LIST(collision) get_collisions(spatialhash* spatialhash){
-    LIST(collision) output = LIST_CREATE(collision,10);
+void get_collisions(spatialhash* spatialhash,LIST(collision)* output){
     FOR(y,spatialhash->grid_height){
         FOR(x,spatialhash->grid_width){
             bucket* test = &spatialhash->buckets[y][x];
@@ -146,14 +145,14 @@ LIST(collision) get_collisions(spatialhash* spatialhash){
                         size_t index_of_second_rect = test->rect_indexes.items[j].data;
                         if(first_rect && second_rect && aabb(first_rect->rect,second_rect->rect)){
                             bool unique_collision = true;
-                            FOR(z,output.item_size){
-                                if(output.items[z].data.first == index_of_first_rect && output.items[z].data.second == index_of_second_rect){
+                            FOR(z,output->item_size){
+                                if(output->items[z].data.first == index_of_first_rect && output->items[z].data.second == index_of_second_rect){
                                     unique_collision = false;
                                 }
                             }
                             if(unique_collision){
                                 collision new_collision = {index_of_first_rect,index_of_second_rect};
-                                LIST_ADD(collision,&output,new_collision);
+                                LIST_ADD(collision,output,new_collision);
                             }
                         }
                     }
@@ -161,11 +160,9 @@ LIST(collision) get_collisions(spatialhash* spatialhash){
             }
         }
     }
-    return output;
 }
 
-LIST(size_t) search_collisions(spatialhash* spatialhash,rect rect){
-    LIST(size_t) output = LIST_CREATE(size_t,10);
+void search_collisions(spatialhash* spatialhash,rect rect,LIST(size_t)* output){
     hash_point bottom_left = hash(spatialhash,create_vec2(rect.center.x-rect.half_dim.x,rect.center.y-rect.half_dim.y));
     hash_point top_right = hash(spatialhash,create_vec2(rect.center.x+rect.half_dim.x,rect.center.y+rect.half_dim.y));
     FOR_CUSTOM(y,bottom_left.y,1,top_right.y+1){
@@ -175,40 +172,37 @@ LIST(size_t) search_collisions(spatialhash* spatialhash,rect rect){
                 rect_handler* test_rect = LIST_GET(rect_handler,&spatialhash->unique_rects,test->rect_indexes.items[i].data);
                 if(test_rect && aabb(rect,test_rect->rect)){
                     bool unique_collision = true;
-                    FOR(j,output.item_size){
-                        if(output.items[j].data == test->rect_indexes.items[i].data){
+                    FOR(j,output->item_size){
+                        if(output->items[j].data == test->rect_indexes.items[i].data){
                             unique_collision = false;
                         }
                     }
                     if(unique_collision){
-                        LIST_ADD(size_t,&output,test->rect_indexes.items[i].data);
+                        LIST_ADD(size_t,output,test->rect_indexes.items[i].data);
                     }
                 }
             }
         }
     }
-    return output;
 }
 
-LIST(size_t) search_point(spatialhash* spatialhash,vec2 pos){
-    LIST(size_t) output = LIST_CREATE(size_t,10);
+void search_point(spatialhash* spatialhash,vec2 pos,LIST(size_t)* output){
     hash_point point = hash(spatialhash,pos);
     bucket* test = &spatialhash->buckets[point.y][point.x];
     FOR(i,test->rect_indexes.item_size){
         rect_handler* test_rect = LIST_GET(rect_handler,&spatialhash->unique_rects,test->rect_indexes.items[i].data);
         if(test_rect && test_point(pos,test_rect->rect)){
             bool unique_collision = true;
-            FOR(j,output.item_size){
-                if(output.items[j].data == test->rect_indexes.items[i].data){
+            FOR(j,output->item_size){
+                if(output->items[j].data == test->rect_indexes.items[i].data){
                     unique_collision = false;
                 }
             }
             if(unique_collision){
-                LIST_ADD(size_t,&output,test->rect_indexes.items[i].data);
+                LIST_ADD(size_t,output,test->rect_indexes.items[i].data);
             }
         }
     }
-    return output;
 }
 
 bool delete_rect(spatialhash* spatialhash,size_t index){
